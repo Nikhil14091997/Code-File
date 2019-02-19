@@ -1,0 +1,171 @@
+<?php 
+
+	include("connect.php");
+	include("functions.php");
+
+	if(logged_in())
+	{
+
+		header("location:profile.php");
+		exit();
+	}
+
+	$error = "";
+
+	if(isset($_POST['submit']))
+	{
+		$firstName = mysql_real_escape_string($_POST['fname']);
+		$lastName = mysql_real_escape_string($_POST['lname']);
+		$email = mysql_real_escape_string($_POST['email']);
+		$class = mysql_real_escape_string($_POST['class']);
+		$phone = mysql_real_escape_string($_POST['phone']);
+		$address = mysql_real_escape_string($_POST['address']);
+		$password = $_POST['password'];
+		$passwordConfirm = $_POST['passwordConfirm'];
+
+
+		$image = $_FILES['image']['name'];
+		$tmp_image = $_FILES['image']['tmp_name'];
+		$imageSize = $_FILES['image']['size'];
+
+
+		$date = date("F,d,Y");
+
+		
+		if(strlen($firstName)<3)
+		{
+			$error = "First name is too short";
+		}
+		else if(strlen($lastName)<3)
+		{
+			$error = "Last name is too short";
+		}
+		elseif (!filter_var($email,FILTER_VALIDATE_EMAIL)) {
+			$error = "Please Enter valid email address";
+		}
+
+		elseif (email_exists($email, $con)) 
+		{
+					$error = "This email already exists";header("location:profile.php");
+		exit();
+		}
+
+
+
+		elseif (strlen($password)<8) {
+			$error = "Password must be greater than 8 characters";
+		}
+		elseif ($password !== $passwordConfirm) {
+			$error ="Password does not match";
+		}
+		elseif ($image == "") {
+			$error ="Please upload your image";
+		}
+
+		elseif ($imageSize>1048576) {
+			$error = "Imagr size must be less than 1mb";
+		}
+		else
+		{
+			$password = md5($password);
+
+
+			$imageExt = explode(".", $image);
+
+
+			$imageExtension = $imageExt[1];
+
+			if ($imageExtension == 'PNG'||$imageExtension == 'JPG'||$imageExtension == 'jpg')
+			 {
+
+				
+			
+			$image = rand(0,1000000).rand(0,1000000).rand(0,1000000).time().".".$imageExtension;
+			
+				$insertQuery = "INSERT INTO users(firstName, lastName, email, class, phone, password, image, date) VALUES ('$firstName','$lastName','$email','$class',','$phone','$password','$image','$date')";
+				if (mysqli_query($con,$insertQuery))
+				{
+
+					if(move_uploaded_file($tmp_image, "images/$image"))
+					{
+						$error = "You are successfully registered";
+					}
+					else
+					{
+						$error = "Image is not uploaded";
+					}
+				}
+			}
+
+			else
+			{
+				$error = "File must be an image";
+			}
+
+		}
+
+	}
+ ?>
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Registration Page</title>
+	<link rel="stylesheet" type="text/css" href="css/styles.css"/>
+</head>
+<body>
+	<div id="error" style="<?php if($error !=""){ ?> display: block; <?php } ?> "> <?php  echo $error ?> </div>
+   <div id="wrapper">
+
+   <div id="menu">
+   			<a href="index.php">Sign up</a>
+   			<a href="Login.php">Login</a>
+
+   		</div>
+   		
+		<div id="formDiv">
+		<form method="POST" action="index.php" enctype="multipart/form-data">
+
+
+		<label>First Name:</label><br><br>
+		<input type="text" name="fname" class="inputFields" required /><br><br>
+
+
+		<label>Last Name:</label><br><br>
+		<input type="text" name="lname" class="inputFields" required><br><br>
+
+		<label>Class :</label><br><br>
+		<input type="text" name="class" class="inputFields" required><br><br>
+
+
+		<label>Phone Number:</label><br><br>
+		<input type="text" name="phone" class="inputFields" required><br><br>
+
+
+		<label>Address:</label><br><br>
+		<input type="text" name="address" class="inputFields" required><br><br>
+
+
+
+		<label>E-mail:</label><br><br>
+		<input type="text" name="email" class="inputFields" required><br><br>
+
+
+		<label>Password:</label><br><br>
+		<input type="password" name="password" class="inputFields" required><br><br>
+
+
+		<label> Renter Password:</label><br><br>
+		<input type="password" name="passwordConfirm" class="inputFields" required><br><br>
+
+		<label>Image:</label><br><br>
+		<input type="file" name="image" id="imageupload"><br><br>
+
+
+		<input type="submit" class="theButtons" name="Next Page" value="submit"><br><br>
+			
+		</form>
+			
+		</div>
+  </div>
+</body>
+</html>
